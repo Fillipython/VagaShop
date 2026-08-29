@@ -1,0 +1,31 @@
+# Bancos de dados e volumes locais
+postgres_data/
+pgdata/
+data/
+
+# Arquivos de ambiente e segredos
+.env
+.env.local
+.env.*.local
+
+# Docker logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Sistema Operacional
+Thumbs.db
+db.properties
+.DS_Store
+.directory
+Desktop.ini
+
+# IDEs e Editores
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

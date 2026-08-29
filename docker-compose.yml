@@ -1,0 +1,25 @@
+services:
+  db:
+    build: .
+    container_name: vagashop-db-container
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: vagashop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      # Persiste os dados do banco na pasta local para não perder os dados ao parar o container
+      - pgdata:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    container_name: vagashop-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+
+
+volumes:
+  pgdata:
