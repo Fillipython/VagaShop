@@ -1,24 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Car, 
   Clock, 
   MapPin, 
   Activity, 
   RefreshCw, 
-  Sun, 
-  CloudRain, 
-  ArrowDownRight, 
-  ArrowUpRight, 
   Layers, 
-  Search,
-  CheckCircle2,
-  PlusCircle,
-  LogOut,
-  X,
-  AlertCircle
+  CheckCircle, 
+  PlusCircle, 
+  LogOut, 
+  X, 
+  Search, 
+  ShieldCheck,
+  Check,
+  ChevronRight,
+  Sun,
+  CloudRain
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
+
+// Componente de Ilustração Top-View de Carro
+function TopViewCar({ color = '#64748b' }) {
+  return (
+    <svg width="68" height="34" viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg" className="car-top-view">
+      {/* Carroçaria Base */}
+      <rect x="5" y="6" width="90" height="38" rx="10" fill={color} />
+      {/* Pneus */}
+      <rect x="18" y="2" width="14" height="4" rx="2" fill="#0f172a" />
+      <rect x="68" y="2" width="14" height="4" rx="2" fill="#0f172a" />
+      <rect x="18" y="44" width="14" height="4" rx="2" fill="#0f172a" />
+      <rect x="68" y="44" width="14" height="4" rx="2" fill="#0f172a" />
+      {/* Teto e Para-brisas */}
+      <path d="M 28 10 L 72 10 Q 78 10 78 16 L 78 34 Q 78 40 72 40 L 28 40 Q 22 40 22 34 L 22 16 Q 22 10 28 10 Z" fill="#1e293b" />
+      {/* Vidro Dianteiro (Frente apontando para a direita) */}
+      <path d="M 68 12 L 75 16 L 75 34 L 68 38 Z" fill="#94a3b8" opacity="0.9" />
+      {/* Vidro Traseiro */}
+      <path d="M 32 12 L 25 16 L 25 34 L 32 38 Z" fill="#94a3b8" opacity="0.8" />
+      {/* Vidros Laterais */}
+      <rect x="34" y="11" width="32" height="3" fill="#cbd5e1" opacity="0.8" />
+      <rect x="34" y="36" width="32" height="3" fill="#cbd5e1" opacity="0.8" />
+      {/* Faróis Dianteiros */}
+      <rect x="91" y="8" width="3" height="6" rx="1" fill="#fef08a" />
+      <rect x="91" y="36" width="3" height="6" rx="1" fill="#fef08a" />
+      {/* Lanternas Traseiras */}
+      <rect x="6" y="8" width="2" height="5" rx="1" fill="#ef4444" />
+      <rect x="6" y="37" width="2" height="5" rx="1" fill="#ef4444" />
+    </svg>
+  );
+}
+
+// Cores variadas para os carros estacionados
+const CAR_COLORS = ['#334155', '#475569', '#1e293b', '#2563eb', '#dc2626', '#059669', '#d97706', '#4b5563'];
 
 export default function App() {
   const [data, setData] = useState({
@@ -27,19 +60,18 @@ export default function App() {
     recentActivity: [],
     sectors: []
   });
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('parked'); // 'parked' | 'feed' | 'map'
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSector, setSelectedSector] = useState('ALL');
+
+  const [activeSectorIndex, setActiveSectorIndex] = useState(0);
+  const [selectedSpot, setSelectedSpot] = useState(null);
+  const [selectedCarForExit, setSelectedCarForExit] = useState(null);
   
-  // Modais de Entrada e Saída
+  // Modais
   const [showEntradaModal, setShowEntradaModal] = useState(false);
   const [showSaidaModal, setShowSaidaModal] = useState(false);
-  const [placaEntrada, setPlacaEntrada] = useState('');
-  const [vagaEntrada, setVagaEntrada] = useState('');
-  const [placaSaida, setPlacaSaida] = useState('');
-  const [modalFeedback, setModalFeedback] = useState(null); // { type: 'success'|'error', message: '' }
-  const isFetchingRef = React.useRef(false);
+  const [placaInput, setPlacaInput] = useState('');
+  const [modalFeedback, setModalFeedback] = useState(null);
+
+  const isFetchingRef = useRef(false);
 
   const fetchData = async () => {
     if (isFetchingRef.current) return;
@@ -51,10 +83,9 @@ export default function App() {
         setData(json);
       }
     } catch (err) {
-      console.error("Erro ao conectar ao backend Spring Boot:", err);
+      console.error("Erro ao sincronizar com backend:", err);
     } finally {
       isFetchingRef.current = false;
-      setLoading(false);
     }
   };
 
@@ -64,20 +95,40 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleEntrada = async (e) => {
+  const currentSector = data.sectors && data.sectors.length > 0 
+    ? data.sectors[activeSectorIndex] || data.sectors[0]
+    : null;
+
+  // Divide as 20 vagas do setor atual em Lado Esquerdo (1-10) e Lado Direito (11-20)
+  const leftSpots = currentSector ? (currentSector.vagas || []).slice(0, 10) : [];
+  const rightSpots = currentSector ? (currentSector.vagas || []).slice(10, 20) : [];
+
+  const handleSpotClick = (vaga) => {
+    if (vaga.isOcupada) {
+      setSelectedCarForExit(vaga);
+      setShowSaidaModal(true);
+      setModalFeedback(null);
+    } else {
+      setSelectedSpot(vaga);
+      setModalFeedback(null);
+    }
+  };
+
+  const handleConfirmEntrada = async (e) => {
     e.preventDefault();
+    if (!selectedSpot || !placaInput) return;
     setModalFeedback(null);
     try {
       const res = await fetch(`${API_BASE}/estacionamento/entrada`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ placa: placaEntrada, idVaga: parseInt(vagaEntrada) })
+        body: JSON.stringify({ placa: placaInput, idVaga: selectedSpot.idVaga })
       });
       const json = await res.json();
       if (res.ok) {
-        setModalFeedback({ type: 'success', message: `Veículo ${json.placa} registrado na vaga ${json.codigoVaga}!` });
-        setPlacaEntrada('');
-        setVagaEntrada('');
+        setModalFeedback({ type: 'success', message: `Veículo ${json.placa} estacionado na vaga ${json.codigoVaga}!` });
+        setPlacaInput('');
+        setSelectedSpot(null);
         fetchData();
         setTimeout(() => { setShowEntradaModal(false); setModalFeedback(null); }, 1500);
       } else {
@@ -85,23 +136,24 @@ export default function App() {
         setModalFeedback({ type: 'error', message: msg });
       }
     } catch (err) {
-      setModalFeedback({ type: 'error', message: 'Falha na conexão com o servidor Spring Boot.' });
+      setModalFeedback({ type: 'error', message: 'Servidor Spring Boot inacessível.' });
     }
   };
 
-  const handleSaida = async (e) => {
+  const handleConfirmSaida = async (e) => {
     e.preventDefault();
+    if (!selectedCarForExit) return;
     setModalFeedback(null);
     try {
       const res = await fetch(`${API_BASE}/estacionamento/saida`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ placa: placaSaida })
+        body: JSON.stringify({ placa: selectedCarForExit.placa })
       });
       const json = await res.json();
       if (res.ok) {
-        setModalFeedback({ type: 'success', message: `Saída do veículo ${json.placa} realizada! Total: R$ ${json.valorPago}` });
-        setPlacaSaida('');
+        setModalFeedback({ type: 'success', message: `Saída do veículo ${json.placa} confirmada! Total: R$ ${json.valorPago}` });
+        setSelectedCarForExit(null);
         fetchData();
         setTimeout(() => { setShowSaidaModal(false); setModalFeedback(null); }, 2000);
       } else {
@@ -109,788 +161,581 @@ export default function App() {
         setModalFeedback({ type: 'error', message: msg });
       }
     } catch (err) {
-      setModalFeedback({ type: 'error', message: 'Falha na conexão com o servidor Spring Boot.' });
+      setModalFeedback({ type: 'error', message: 'Servidor Spring Boot inacessível.' });
     }
   };
 
-  const filteredCars = (data.parkedCars || []).filter(car => {
-    const matchesSearch = (car.placa || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (car.codigoVaga || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSector = selectedSector === 'ALL' || car.nomeSetor === selectedSector;
-    return matchesSearch && matchesSector;
-  });
-
-  // Lista todas as vagas livres para preencher o select do modal de entrada
-  const vagasLivresList = [];
-  (data.sectors || []).forEach(sec => {
-    (sec.vagas || []).forEach(v => {
-      if (!v.isOcupada) {
-        vagasLivresList.push({ idVaga: v.idVaga, codigoVaga: v.codigoVaga, nomeSetor: sec.nomeSetor });
-      }
-    });
-  });
-
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '24px 20px' }}>
+    <div className="app-layout">
       
-      {/* HEADER */}
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: '16px',
-        marginBottom: '32px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ 
-            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', 
-            padding: '12px', 
-            borderRadius: '14px',
-            boxShadow: '0 8px 20px -4px rgba(59, 130, 246, 0.5)'
-          }}>
-            <Car size={28} color="#ffffff" />
+      {/* CABEÇALHO */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: '#2563eb', padding: '10px', borderRadius: '12px', color: '#fff', display: 'flex' }}>
+            <Car size={24} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              Vaga<span style={{ color: '#3b82f6' }}>Shop</span>
-              <span style={{ fontSize: '0.8rem', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                Spring Boot + React
-              </span>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+              VagaShop <span style={{ color: '#2563eb', fontSize: '0.9rem', fontWeight: 600 }}>• Smart Parking</span>
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monitoramento de Pátio e Fluxo de Veículos em Tempo Real</p>
+            <p style={{ fontSize: '0.825rem', color: '#64748b' }}>Monitoramento de Pátio e Fluxo de Veículos em Tempo Real</p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <button 
-            onClick={() => { setModalFeedback(null); setShowEntradaModal(true); }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '9px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: '#10b981',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-            }}
-          >
-            <PlusCircle size={17} />
-            Registrar Entrada
-          </button>
-
-          <button 
-            onClick={() => { setModalFeedback(null); setShowSaidaModal(true); }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '9px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: '#f43f5e',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(244, 63, 94, 0.4)'
-            }}
-          >
-            <LogOut size={17} />
-            Registrar Saída
-          </button>
-
-          <div className="live-badge">
-            <span className="pulse-dot"></span>
-            Spring API Conectada
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ 
+            background: '#ffffff', 
+            padding: '6px 14px', 
+            borderRadius: '9999px', 
+            border: '1px solid #e2e8f0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            color: '#10b981'
+          }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+            Simulador Ativo (Spring Boot)
           </div>
-          
+
           <button 
             onClick={fetchData} 
-            style={{
+            style={{ 
+              background: '#ffffff', 
+              border: '1px solid #e2e8f0', 
+              borderRadius: '10px', 
+              padding: '8px 12px', 
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '8px 14px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
+              gap: '6px',
+              fontSize: '0.8rem',
+              color: '#475569',
               fontWeight: 500
             }}
           >
-            <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            <RefreshCw size={13} />
             {data.summary?.atualizadoEm || '-'}
           </button>
         </div>
       </header>
 
-      {/* METRICS CARDS */}
-      <section style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
-        gap: '16px', 
-        marginBottom: '32px' 
-      }}>
-        <div className="glass-card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Total de Vagas</span>
-            <Layers size={18} color="#60a5fa" />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f8fafc' }}>
-            {data.summary?.totalVagas || 0}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            5 Setores cadastrados
-          </div>
-        </div>
-
-        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #f43f5e' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Carros Estacionados</span>
-            <Car size={18} color="#f43f5e" />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fb7185' }}>
-            {data.summary?.vagasOcupadas || 0}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {data.summary?.taxaOcupacao || 0}% de ocupação
-          </div>
-        </div>
-
-        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #10b981' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Vagas Livres</span>
-            <CheckCircle2 size={18} color="#34d399" />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>
-            {data.summary?.vagasLivres || 0}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Disponíveis para entrada
-          </div>
-        </div>
-
-        <div className="glass-card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Taxa de Lotação</span>
-            <Activity size={18} color="#a78bfa" />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c084fc' }}>
-            {data.summary?.taxaOcupacao || 0}%
-          </div>
-          <div style={{ 
-            width: '100%', 
-            height: '6px', 
-            background: 'rgba(255, 255, 255, 0.1)', 
-            borderRadius: '4px', 
-            marginTop: '10px',
-            overflow: 'hidden' 
-          }}>
-            <div style={{ 
-              width: `${Math.min(100, data.summary?.taxaOcupacao || 0)}%`, 
-              height: '100%', 
-              background: (data.summary?.taxaOcupacao || 0) > 80 ? '#f43f5e' : ((data.summary?.taxaOcupacao || 0) > 50 ? '#f59e0b' : '#3b82f6'),
-              transition: 'width 0.5s ease-in-out'
-            }}></div>
-          </div>
-        </div>
-      </section>
-
-      {/* TABS & FILTERS */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          background: 'rgba(17, 24, 39, 0.6)', 
-          padding: '4px', 
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)' 
-        }}>
-          <button 
-            onClick={() => setActiveTab('parked')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'parked' ? 'var(--accent-blue)' : 'transparent',
-              color: activeTab === 'parked' ? '#ffffff' : 'var(--text-secondary)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <Car size={16} />
-            Carros Estacionados Agora ({(data.parkedCars || []).length})
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('feed')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'feed' ? 'var(--accent-blue)' : 'transparent',
-              color: activeTab === 'feed' ? '#ffffff' : 'var(--text-secondary)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <Activity size={16} />
-            Feed em Tempo Real
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('map')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'map' ? 'var(--accent-blue)' : 'transparent',
-              color: activeTab === 'map' ? '#ffffff' : 'var(--text-secondary)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <MapPin size={16} />
-            Mapa dos 5 Setores
-          </button>
-        </div>
-
-        {activeTab === 'parked' && (
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                placeholder="Buscar placa ou vaga..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  padding: '8px 12px 8px 36px',
-                  color: '#fff',
-                  fontSize: '0.875rem',
-                  outline: 'none',
-                  width: '200px'
-                }}
-              />
+      {/* GRID PRINCIPAL (CANVAS DO ESTACIONAMENTO + PAINEL LATERAL) */}
+      <div className="main-grid">
+        
+        {/* COLUNA ESQUERDA: CANVAS DE VAGAS TOP-VIEW */}
+        <div className="clean-card" style={{ padding: '24px' }}>
+          
+          {/* SELETOR DE SETORES (FLOOR PILLS) */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.5px', marginBottom: '10px' }}>
+              Selecione o Setor do Estacionamento
             </div>
 
-            <select
-              value={selectedSector}
-              onChange={(e) => setSelectedSector(e.target.value)}
-              style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                color: '#fff',
-                fontSize: '0.875rem',
-                outline: 'none'
-              }}
-            >
-              <option value="ALL">Todos os Setores</option>
-              {(data.sectors || []).map(s => (
-                <option key={s.idSetor} value={s.nomeSetor}>{s.nomeSetor}</option>
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
+              {(data.sectors || []).map((sec, idx) => (
+                <button
+                  key={sec.idSetor}
+                  onClick={() => { setActiveSectorIndex(idx); setSelectedSpot(null); }}
+                  className={`floor-pill ${activeSectorIndex === idx ? 'active' : ''}`}
+                >
+                  {sec.nomeSetor}
+                </button>
               ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* CONTENT: TAB 1 - CARROS ESTACIONADOS AGORA */}
-      {activeTab === 'parked' && (
-        <div>
-          {filteredCars.length === 0 ? (
-            <div className="glass-card" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Car size={48} style={{ margin: '0 auto 16px', opacity: 0.4 }} />
-              <h3>Nenhum veículo encontrado no pátio neste momento.</h3>
             </div>
-          ) : (
+          </div>
+
+          {/* STATUS DO SETOR SELECIONADO */}
+          {currentSector && (
             <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-              gap: '16px' 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              background: '#f8fafc', 
+              padding: '12px 18px', 
+              borderRadius: '12px', 
+              marginBottom: '20px',
+              border: '1px solid #e2e8f0',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
-              {filteredCars.map((car) => (
-                <div key={car.idRegistro || car.idVaga} className="glass-card" style={{ padding: '18px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }} />
-
-                  {/* Header: Placa & Vaga */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                    <div className="plate-tag">
-                      <div className="plate-header">
-                        <span>BRASIL</span>
-                        <span>BR</span>
-                      </div>
-                      <div className="plate-text">{car.placa}</div>
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ 
-                        background: 'rgba(59, 130, 246, 0.15)', 
-                        color: '#60a5fa', 
-                        padding: '4px 10px', 
-                        borderRadius: '6px', 
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: '1px solid rgba(59, 130, 246, 0.3)'
-                      }}>
-                        Vaga {car.codigoVaga}
-                      </span>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Tipo: {car.tipoVaga}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Setor */}
-                  <div style={{ 
-                    background: 'rgba(255, 255, 255, 0.03)', 
-                    padding: '10px', 
-                    borderRadius: '8px', 
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                      <MapPin size={15} color="#94a3b8" />
-                      <span>{car.nomeSetor}</span>
-                    </div>
-                    <span style={{ 
-                      fontSize: '0.75rem', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px',
-                      color: car.isCoberto ? '#34d399' : '#f59e0b' 
-                    }}>
-                      {car.isCoberto ? <Sun size={13} /> : <CloudRain size={13} />}
-                      {car.isCoberto ? 'Coberto' : 'Descoberto'}
-                    </span>
-                  </div>
-
-                  {/* Entrada e Tempo */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Clock size={13} /> Entrada: {car.dataHoraEntrada ? new Date(car.dataHoraEntrada).toLocaleTimeString() : '-'}
-                    </span>
-                    <span style={{ 
-                      background: 'rgba(16, 185, 129, 0.15)', 
-                      color: '#34d399', 
-                      padding: '2px 8px', 
-                      borderRadius: '4px', 
-                      fontWeight: 600 
-                    }}>
-                      {car.minutosEstacionado > 0 ? `${car.minutosEstacionado} min` : 'Recém chegado'}
-                    </span>
-                  </div>
+              <div>
+                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>{currentSector.nomeSetor}</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  {currentSector.isCoberto ? <Sun size={13} color="#10b981" /> : <CloudRain size={13} color="#f59e0b" />}
+                  {currentSector.isCoberto ? 'Área com Cobertura' : 'Área Descoberta'} • 20 Vagas Totais
                 </div>
-              ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem' }}>
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>{currentSector.vagasOcupadas} Ocupadas</span>
+                <span style={{ color: '#cbd5e1' }}>|</span>
+                <span style={{ color: '#10b981', fontWeight: 600 }}>{currentSector.vagasLivres} Livres</span>
+              </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* CONTENT: TAB 2 - FEED EM TEMPO REAL */}
-      {activeTab === 'feed' && (
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={18} color="#3b82f6" />
-            Fluxo de Entradas e Saídas em Tempo Real
-          </h3>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {(data.recentActivity || []).map((event, idx) => (
-              <div 
-                key={event.idRegistro || idx}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px 16px',
-                  background: event.tipoEvento === 'ENTRADA' ? 'rgba(16, 185, 129, 0.05)' : 'rgba(244, 63, 94, 0.05)',
-                  border: `1px solid ${event.tipoEvento === 'ENTRADA' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`,
-                  borderRadius: '10px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{
-                    padding: '8px',
-                    borderRadius: '8px',
-                    background: event.tipoEvento === 'ENTRADA' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
-                    color: event.tipoEvento === 'ENTRADA' ? '#34d399' : '#fb7185'
-                  }}>
-                    {event.tipoEvento === 'ENTRADA' ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{event.placa}</span>
-                      <span style={{ 
-                        fontSize: '0.75rem', 
-                        padding: '2px 6px', 
-                        borderRadius: '4px',
-                        background: event.tipoEvento === 'ENTRADA' ? '#10b981' : '#f43f5e',
-                        color: '#fff',
-                        fontWeight: 700
-                      }}>
-                        {event.tipoEvento}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {event.nomeSetor} • Vaga {event.codigoVaga}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    {event.dataEvento ? new Date(event.dataEvento).toLocaleTimeString() : '-'}
-                  </div>
-                  {event.valorPago && (
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#34d399', marginTop: '2px' }}>
-                      Pago: R$ {parseFloat(event.valorPago).toFixed(2)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* CONTENT: TAB 3 - MAPA DOS 5 SETORES */}
-      {activeTab === 'map' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {(data.sectors || []).map((sector) => (
-            <div key={sector.idSetor} className="glass-card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{sector.nomeSetor}</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {sector.isCoberto ? 'Área Coberta' : 'Área Descoberta'} • {sector.totalVagas} Vagas Totais
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#fb7185', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    {sector.vagasOcupadas} Ocupadas
-                  </span>
-                  <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    {sector.vagasLivres} Livres
-                  </span>
-                </div>
-              </div>
-
-              {/* Grid das 20 Vagas */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', 
-                gap: '10px' 
-              }}>
-                {(sector.vagas || []).map((vaga) => (
-                  <div 
-                    key={vaga.idVaga}
-                    style={{
-                      padding: '12px 8px',
-                      borderRadius: '8px',
-                      background: vaga.isOcupada ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.1)',
-                      border: `1px solid ${vaga.isOcupada ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`,
-                      textAlign: 'center'
-                    }}
-                  >
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: vaga.isOcupada ? '#fb7185' : '#34d399' }}>
-                      {vaga.codigoVaga}
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      {vaga.tipoVaga}
-                    </div>
-
-                    {vaga.isOcupada ? (
-                      <div style={{ 
-                        fontSize: '0.75rem', 
-                        fontFamily: 'var(--font-mono)', 
-                        fontWeight: 700, 
-                        background: '#000', 
-                        padding: '2px 4px', 
-                        borderRadius: '4px',
-                        color: '#fff',
-                        marginTop: '4px'
-                      }}>
-                        {vaga.placa}
+          {/* PÁTIO / VISÃO TOP-VIEW DE 20 VAGAS COM PISTA CENTRAL */}
+          <div className="parking-lot-canvas">
+            <div className="parking-road-grid">
+              
+              {/* LADO ESQUERDO: Vagas 1 a 10 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {leftSpots.map((vaga, i) => {
+                  const isSelected = selectedSpot?.idVaga === vaga.idVaga;
+                  return (
+                    <div 
+                      key={vaga.idVaga}
+                      onClick={() => handleSpotClick(vaga)}
+                      className={`parking-bay ${vaga.isOcupada ? 'occupied' : 'free'} ${isSelected ? 'selected' : ''}`}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</div>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}>{vaga.tipoVaga}</div>
                       </div>
-                    ) : (
-                      <div style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 600, marginTop: '4px' }}>
-                        LIVRE
+
+                      {vaga.isOcupada ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <TopViewCar color={CAR_COLORS[(vaga.idVaga || i) % CAR_COLORS.length]} />
+                          <div className="brazil-plate">
+                            <div className="brazil-plate-header">
+                              <span>BR</span>
+                            </div>
+                            <div className="brazil-plate-code">{vaga.placa}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'right' }}>
+                          {isSelected ? (
+                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
+                              ✓ Selecionada
+                            </span>
+                          ) : (
+                            <span style={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 600 }}>
+                              + Disponível
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CORREDOR / PISTA CENTRAL COM MARCAÇÕES */}
+              <div className="road-aisle">
+                <div className="road-dashed-line"></div>
+                <div className="road-marker-badge">A</div>
+                <div className="road-marker-badge" style={{ marginTop: 'auto', marginBottom: 'auto' }}>B</div>
+                <div className="road-marker-badge" style={{ marginTop: 'auto' }}>C</div>
+              </div>
+
+              {/* LADO DIREITO: Vagas 11 a 20 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {rightSpots.map((vaga, i) => {
+                  const isSelected = selectedSpot?.idVaga === vaga.idVaga;
+                  return (
+                    <div 
+                      key={vaga.idVaga}
+                      onClick={() => handleSpotClick(vaga)}
+                      className={`parking-bay ${vaga.isOcupada ? 'occupied' : 'free'} ${isSelected ? 'selected' : ''}`}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</div>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}>{vaga.tipoVaga}</div>
+                      </div>
+
+                      {vaga.isOcupada ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <TopViewCar color={CAR_COLORS[(vaga.idVaga || i + 10) % CAR_COLORS.length]} />
+                          <div className="brazil-plate">
+                            <div className="brazil-plate-header">
+                              <span>BR</span>
+                            </div>
+                            <div className="brazil-plate-code">{vaga.placa}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'right' }}>
+                          {isSelected ? (
+                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
+                              ✓ Selecionada
+                            </span>
+                          ) : (
+                            <span style={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 600 }}>
+                              + Disponível
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </div>
+
+          {/* BOTÃO FLUTUANTE DE CONFIRMAÇÃO DE ENTRADA SELECIONADA */}
+          {selectedSpot && (
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+              <button 
+                onClick={() => setShowEntradaModal(true)}
+                className="btn-primary-blue"
+                style={{ width: '100%', maxWidth: '360px' }}
+              >
+                <Check size={18} />
+                Confirmar Entrada na Vaga {selectedSpot.codigoVaga}
+              </button>
+            </div>
+          )}
+
+        </div>
+
+        {/* COLUNA DIREITA: PAINEL DE CONTROLE E RESUMO */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* CARD DE RESUMO GERAL */}
+          <div className="clean-card" style={{ padding: '20px' }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={18} color="#2563eb" />
+              Ocupação Total do Estacionamento
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Carros no Pátio</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '2px' }}>
+                  {data.summary?.vagasOcupadas || 0}
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Vagas Livres</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>
+                  {data.summary?.vagasLivres || 0}
+                </div>
+              </div>
+            </div>
+
+            {/* Barra de Progresso */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                <span>Taxa de Lotação</span>
+                <span>{data.summary?.taxaOcupacao || 0}%</span>
+              </div>
+              <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{ 
+                  width: `${Math.min(100, data.summary?.taxaOcupacao || 0)}%`, 
+                  height: '100%', 
+                  background: (data.summary?.taxaOcupacao || 0) > 85 ? '#ef4444' : '#2563eb',
+                  transition: 'width 0.4s ease'
+                }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD DE FEED DE MOVIMENTAÇÕES AO VIVO */}
+          <div className="clean-card" style={{ padding: '20px' }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity size={18} color="#2563eb" />
+              Movimentação em Tempo Real
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflowY: 'auto' }}>
+              {(data.recentActivity || []).slice(0, 8).map((event, idx) => (
+                <div 
+                  key={event.idRegistro || idx}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 12px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      background: event.tipoEvento === 'ENTRADA' ? '#ecfdf5' : '#fff1f2',
+                      color: event.tipoEvento === 'ENTRADA' ? '#059669' : '#e11d48'
+                    }}>
+                      {event.tipoEvento}
+                    </span>
+
+                    <div>
+                      <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#0f172a' }}>{event.placa}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Vaga {event.codigoVaga} • {event.nomeSetor}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      {event.dataEvento ? new Date(event.dataEvento).toLocaleTimeString() : '-'}
+                    </div>
+                    {event.valorPago && (
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669' }}>
+                        R$ {parseFloat(event.valorPago).toFixed(2)}
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
 
-      {/* MODAL: REGISTRAR ENTRADA */}
+          {/* BOTÕES RÁPIDOS DE CHECK-IN / CHECK-OUT */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={() => { setSelectedSpot(null); setShowEntradaModal(true); }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: '#10b981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+              }}
+            >
+              <PlusCircle size={16} />
+              Nova Entrada
+            </button>
+
+            <button 
+              onClick={() => { setSelectedCarForExit(null); setShowSaidaModal(true); }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: '#f43f5e',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(244, 63, 94, 0.25)'
+              }}
+            >
+              <LogOut size={16} />
+              Dar Saída
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* MODAL ENTRADA */}
       {showEntradaModal && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 1000,
-          padding: '20px'
+          padding: '16px'
         }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '440px', padding: '24px', background: '#111827', position: 'relative' }}>
-            <button 
-              onClick={() => setShowEntradaModal(false)}
-              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
-
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <PlusCircle size={20} color="#10b981" />
-              Registrar Entrada de Veículo
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              Insira a placa e selecione a vaga disponível para check-in.
-            </p>
+          <div style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '20px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Check-in de Veículo</h3>
+                <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  {selectedSpot ? `Vaga selecionada: ${selectedSpot.codigoVaga}` : 'Selecione a vaga e digite a placa'}
+                </p>
+              </div>
+              <button onClick={() => setShowEntradaModal(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <X size={16} color="#64748b" />
+              </button>
+            </div>
 
             {modalFeedback && (
               <div style={{
-                padding: '12px',
-                borderRadius: '8px',
+                padding: '10px 14px',
+                borderRadius: '10px',
                 marginBottom: '16px',
-                fontSize: '0.875rem',
+                fontSize: '0.85rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: modalFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
-                color: modalFeedback.type === 'success' ? '#34d399' : '#fb7185',
-                border: `1px solid ${modalFeedback.type === 'success' ? '#10b981' : '#f43f5e'}`
+                background: modalFeedback.type === 'success' ? '#ecfdf5' : '#fff1f2',
+                color: modalFeedback.type === 'success' ? '#059669' : '#e11d48',
+                border: `1px solid ${modalFeedback.type === 'success' ? '#a7f3d0' : '#fecdd3'}`
               }}>
-                {modalFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                 {modalFeedback.message}
               </div>
             )}
 
-            <form onSubmit={handleEntrada}>
+            <form onSubmit={handleConfirmEntrada}>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  Placa do Veículo (Mercosul ou Tradicional)
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Placa do Carro (Mercosul ou Padrão)
                 </label>
                 <input 
                   type="text" 
                   required
                   placeholder="Ex: ABC1D23 ou ABC-1234"
-                  value={placaEntrada}
-                  onChange={(e) => setPlacaEntrada(e.target.value.toUpperCase())}
+                  value={placaInput}
+                  onChange={(e) => setPlacaInput(e.target.value.toUpperCase())}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
+                    padding: '12px 14px',
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '10px',
                     fontFamily: 'var(--font-mono)',
                     fontSize: '1rem',
-                    fontWeight: 700,
-                    letterSpacing: '1px'
+                    fontWeight: 800,
+                    letterSpacing: '1px',
+                    outline: 'none'
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  Selecione a Vaga Livre ({vagasLivresList.length} disponíveis)
-                </label>
-                <select
-                  required
-                  value={vagaEntrada}
-                  onChange={(e) => setVagaEntrada(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  <option value="">Selecione uma vaga...</option>
-                  {vagasLivresList.map(v => (
-                    <option key={v.idVaga} value={v.idVaga}>
-                      {v.codigoVaga} - {v.nomeSetor}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!selectedSpot && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Escolha a Vaga Livre
+                  </label>
+                  <select
+                    required
+                    onChange={(e) => {
+                      const vId = parseInt(e.target.value);
+                      const found = currentSector?.vagas?.find(v => v.idVaga === vId);
+                      if (found) setSelectedSpot(found);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      background: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: '10px',
+                      fontSize: '0.85rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="">Selecione uma vaga...</option>
+                    {(currentSector?.vagas || []).filter(v => !v.isOcupada).map(v => (
+                      <option key={v.idVaga} value={v.idVaga}>{v.codigoVaga} ({v.tipoVaga})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              <button
-                type="submit"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: '#10b981',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Confirmar Entrada
+              <button type="submit" className="btn-primary-blue" style={{ width: '100%' }}>
+                Confirmar Estadia
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: REGISTRAR SAÍDA */}
+      {/* MODAL SAÍDA */}
       {showSaidaModal && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 1000,
-          padding: '20px'
+          padding: '16px'
         }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '440px', padding: '24px', background: '#111827', position: 'relative' }}>
-            <button 
-              onClick={() => setShowSaidaModal(false)}
-              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
-
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LogOut size={20} color="#f43f5e" />
-              Registrar Saída e Pagamento
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              O sistema calculará automaticamente o tempo e o valor de cobrança.
-            </p>
+          <div style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '20px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Check-out e Pagamento</h3>
+                <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  {selectedCarForExit ? `Veículo: ${selectedCarForExit.placa} (Vaga ${selectedCarForExit.codigoVaga})` : 'Digite a placa para calcular a tarifa'}
+                </p>
+              </div>
+              <button onClick={() => setShowSaidaModal(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <X size={16} color="#64748b" />
+              </button>
+            </div>
 
             {modalFeedback && (
               <div style={{
-                padding: '12px',
-                borderRadius: '8px',
+                padding: '10px 14px',
+                borderRadius: '10px',
                 marginBottom: '16px',
-                fontSize: '0.875rem',
+                fontSize: '0.85rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: modalFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
-                color: modalFeedback.type === 'success' ? '#34d399' : '#fb7185',
-                border: `1px solid ${modalFeedback.type === 'success' ? '#10b981' : '#f43f5e'}`
+                background: modalFeedback.type === 'success' ? '#ecfdf5' : '#fff1f2',
+                color: modalFeedback.type === 'success' ? '#059669' : '#e11d48',
+                border: `1px solid ${modalFeedback.type === 'success' ? '#a7f3d0' : '#fecdd3'}`
               }}>
-                {modalFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                 {modalFeedback.message}
               </div>
             )}
 
-            <form onSubmit={handleSaida}>
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  Placa do Veículo que está saindo
+            <form onSubmit={handleConfirmSaida}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Placa do Veículo
                 </label>
                 <input 
                   type="text" 
                   required
-                  placeholder="Ex: ABC1D23 ou selecione abaixo"
-                  value={placaSaida}
-                  onChange={(e) => setPlacaSaida(e.target.value.toUpperCase())}
+                  placeholder="Ex: ABC1D23"
+                  value={selectedCarForExit?.placa || ''}
+                  onChange={(e) => setSelectedCarForExit({ ...selectedCarForExit, placa: e.target.value.toUpperCase() })}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
+                    padding: '12px 14px',
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '10px',
                     fontFamily: 'var(--font-mono)',
                     fontSize: '1rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     letterSpacing: '1px',
-                    marginBottom: '10px'
+                    outline: 'none'
                   }}
                 />
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '110px', overflowY: 'auto' }}>
-                  {(data.parkedCars || []).slice(0, 10).map(c => (
-                    <button
-                      key={c.idRegistro || c.idVaga}
-                      type="button"
-                      onClick={() => setPlacaSaida(c.placa)}
-                      style={{
-                        padding: '4px 8px',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '4px',
-                        color: '#fff',
-                        fontSize: '0.75rem',
-                        fontFamily: 'var(--font-mono)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {c.placa} ({c.codigoVaga})
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              <button
-                type="submit"
+              <button 
+                type="submit" 
                 style={{
                   width: '100%',
                   padding: '12px',
                   background: '#f43f5e',
-                  border: 'none',
-                  borderRadius: '8px',
                   color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
                   fontWeight: 700,
-                  fontSize: '1rem',
-                  cursor: 'pointer'
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(244, 63, 94, 0.3)'
                 }}
               >
-                Confirmar Saída e Calcular Tarifa
+                Liberar Vaga e Cobrar Tarifa
               </button>
             </form>
           </div>
