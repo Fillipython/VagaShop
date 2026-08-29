@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instala dependências do compilador necessárias para o psycopg2
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia os arquivos necessários
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY populator.py .
+COPY .env .
+
+# Executa o script
+CMD ["python", "populator.py"]
