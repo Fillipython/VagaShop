@@ -17,7 +17,24 @@ services:
     container_name: vagashop-adminer
     restart: always
     ports:
+      - "8888:8080"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vagashop-backend
+    restart: always
+    ports:
       - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
 
   frontend:
     build:
@@ -27,6 +44,8 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
