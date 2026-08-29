@@ -290,13 +290,13 @@ export default function App() {
                       onClick={() => handleSpotClick(vaga)}
                       className={`parking-bay ${vaga.isOcupada ? 'occupied' : 'free'} ${isSelected ? 'selected' : ''}`}
                     >
-                      <div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}>{vaga.tipoVaga}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>{vaga.tipoVaga}</span>
                       </div>
 
                       {vaga.isOcupada ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="parking-bay-content">
                           <TopViewCar color={CAR_COLORS[(vaga.idVaga || i) % CAR_COLORS.length]} />
                           <div className="brazil-plate">
                             <div className="brazil-plate-header">
@@ -306,13 +306,13 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ width: '100%', textAlign: 'center', padding: '6px 0' }}>
                           {isSelected ? (
-                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
+                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
                               ✓ Selecionada
                             </span>
                           ) : (
-                            <span style={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <span style={{ color: '#2563eb', fontSize: '0.8rem', fontWeight: 700 }}>
                               + Disponível
                             </span>
                           )}
@@ -341,13 +341,13 @@ export default function App() {
                       onClick={() => handleSpotClick(vaga)}
                       className={`parking-bay ${vaga.isOcupada ? 'occupied' : 'free'} ${isSelected ? 'selected' : ''}`}
                     >
-                      <div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}>{vaga.tipoVaga}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>{vaga.tipoVaga}</span>
                       </div>
 
                       {vaga.isOcupada ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="parking-bay-content">
                           <TopViewCar color={CAR_COLORS[(vaga.idVaga || i + 10) % CAR_COLORS.length]} />
                           <div className="brazil-plate">
                             <div className="brazil-plate-header">
@@ -357,13 +357,13 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ width: '100%', textAlign: 'center', padding: '6px 0' }}>
                           {isSelected ? (
-                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
+                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
                               ✓ Selecionada
                             </span>
                           ) : (
-                            <span style={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <span style={{ color: '#2563eb', fontSize: '0.8rem', fontWeight: 700 }}>
                               + Disponível
                             </span>
                           )}

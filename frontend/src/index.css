@@ -254,32 +254,50 @@ body {
 
 @media (max-width: 640px) {
   .app-layout {
-    padding: 14px;
+    padding: 12px 8px;
   }
   .clean-card {
-    padding: 16px !important;
+    padding: 14px 10px !important;
     border-radius: 16px;
   }
   .parking-lot-canvas {
-    padding: 14px 10px;
-    border-radius: 16px;
+    padding: 14px 6px;
+    border-radius: 14px;
   }
   .parking-road-grid {
-    grid-template-columns: 1fr 34px 1fr;
+    grid-template-columns: 1fr 28px 1fr;
     gap: 6px;
   }
   .parking-bay {
-    min-height: 80px;
-    padding: 8px 8px;
+    min-height: 90px;
+    padding: 10px 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .parking-bay-content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
   .car-top-view {
-    width: 52px;
-    height: 26px;
+    width: 64px;
+    height: 32px;
+  }
+  .brazil-plate {
+    border-radius: 3px;
+  }
+  .brazil-plate-header {
+    font-size: 0.5rem;
+    padding: 1px 3px;
   }
   .brazil-plate-code {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     letter-spacing: 0.5px;
-    padding: 2px 3px;
+    padding: 2px 4px;
+    font-weight: 800;
   }
 }
 
