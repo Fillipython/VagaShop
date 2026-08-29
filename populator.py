@@ -7,7 +7,6 @@ import psycopg2
 from psycopg2 import extras
 from dotenv import load_dotenv
 
-# Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
 # Configurações do Banco de Dados
@@ -236,7 +235,7 @@ def run_simulation(conn):
                         "INSERT INTO Registro_Estacionamento (id_veiculo, id_vaga, data_hora_entrada) VALUES (%s, %s, %s);",
                         (vehicle_id, vaga_id, now)
                     )
-                    print(f"🟢 ENTRADA: Veículo [{plate}] estacionou na vaga [{codigo_vaga}] às {now.strftime('%H:%M:%S')}")
+                    print(f"ENTRADA: Veículo [{plate}] estacionou na vaga [{codigo_vaga}] às {now.strftime('%H:%M:%S')}")
                     conn.commit()
                     
             time.sleep(3)
