@@ -169,54 +169,33 @@ export default function App() {
     <div className="app-layout">
       
       {/* CABEÇALHO */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: '#2563eb', padding: '10px', borderRadius: '12px', color: '#fff', display: 'flex' }}>
+      <header className="app-header">
+        <div className="header-brand">
+          <div style={{ background: '#2563eb', padding: '10px', borderRadius: '12px', color: '#fff', display: 'flex', flexShrink: 0 }}>
             <Car size={24} />
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               VagaShop <span style={{ color: '#2563eb', fontSize: '0.9rem', fontWeight: 600 }}>• Smart Parking</span>
             </h1>
-            <p style={{ fontSize: '0.825rem', color: '#64748b' }}>Monitoramento de Pátio e Fluxo de Veículos em Tempo Real</p>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px', wordBreak: 'break-word' }}>
+              Monitoramento de Pátio e Fluxo de Veículos em Tempo Real
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ 
-            background: '#ffffff', 
-            padding: '6px 14px', 
-            borderRadius: '9999px', 
-            border: '1px solid #e2e8f0', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            color: '#10b981'
-          }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-            Simulador Ativo (Spring Boot)
+        <div className="header-status">
+          <div className="badge-simulator">
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block', flexShrink: 0 }}></span>
+            <span>Simulador Ativo (Spring Boot)</span>
           </div>
 
           <button 
             onClick={fetchData} 
-            style={{ 
-              background: '#ffffff', 
-              border: '1px solid #e2e8f0', 
-              borderRadius: '10px', 
-              padding: '8px 12px', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.8rem',
-              color: '#475569',
-              fontWeight: 500
-            }}
+            className="btn-refresh"
           >
             <RefreshCw size={13} />
-            {data.summary?.atualizadoEm || '-'}
+            <span>{data.summary?.atualizadoEm || '-'}</span>
           </button>
         </div>
       </header>
@@ -225,15 +204,15 @@ export default function App() {
       <div className="main-grid">
         
         {/* COLUNA ESQUERDA: CANVAS DE VAGAS TOP-VIEW */}
-        <div className="clean-card" style={{ padding: '24px' }}>
+        <div className="clean-card">
           
           {/* SELETOR DE SETORES (FLOOR PILLS) */}
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.5px', marginBottom: '10px' }}>
               Selecione o Setor do Estacionamento
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
+            <div className="floor-pills-scroll">
               {(data.sectors || []).map((sec, idx) => (
                 <button
                   key={sec.idSetor}
@@ -248,18 +227,7 @@ export default function App() {
 
           {/* STATUS DO SETOR SELECIONADO */}
           {currentSector && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              background: '#f8fafc', 
-              padding: '12px 18px', 
-              borderRadius: '12px', 
-              marginBottom: '20px',
-              border: '1px solid #e2e8f0',
-              flexWrap: 'wrap',
-              gap: '8px'
-            }}>
+            <div className="sector-status-bar">
               <div>
                 <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>{currentSector.nomeSetor}</div>
                 <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -268,7 +236,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem' }}>
+              <div className="sector-counts">
                 <span style={{ color: '#ef4444', fontWeight: 600 }}>{currentSector.vagasOcupadas} Ocupadas</span>
                 <span style={{ color: '#cbd5e1' }}>|</span>
                 <span style={{ color: '#10b981', fontWeight: 600 }}>{currentSector.vagasLivres} Livres</span>
@@ -281,7 +249,7 @@ export default function App() {
             <div className="parking-road-grid">
               
               {/* LADO ESQUERDO: Vagas 1 a 10 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="parking-wing">
                 {leftSpots.map((vaga, i) => {
                   const isSelected = selectedSpot?.idVaga === vaga.idVaga;
                   return (
@@ -290,9 +258,9 @@ export default function App() {
                       onClick={() => handleSpotClick(vaga)}
                       className={`parking-bay ${vaga.isOcupada ? 'occupied' : 'free'} ${isSelected ? 'selected' : ''}`}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</span>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>{vaga.tipoVaga}</span>
+                      <div className="parking-bay-info">
+                        <span className="parking-bay-code">{vaga.codigoVaga}</span>
+                        <span className="parking-bay-type">{vaga.tipoVaga}</span>
                       </div>
 
                       {vaga.isOcupada ? (
@@ -306,13 +274,13 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <div style={{ width: '100%', textAlign: 'center', padding: '6px 0' }}>
+                        <div className="parking-bay-action">
                           {isSelected ? (
-                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
+                            <span className="badge-selected">
                               ✓ Selecionada
                             </span>
                           ) : (
-                            <span style={{ color: '#2563eb', fontSize: '0.8rem', fontWeight: 700 }}>
+                            <span className="badge-available">
                               + Disponível
                             </span>
                           )}
@@ -323,7 +291,7 @@ export default function App() {
                 })}
               </div>
 
-              {/* CORREDOR / PISTA CENTRAL COM MARCAÇÕES */}
+              {/* CORREDOR / PISTA CENTRAL COM MARCAÇÕES (visível no desktop) */}
               <div className="road-aisle">
                 <div className="road-dashed-line"></div>
                 <div className="road-marker-badge">A</div>
@@ -332,7 +300,7 @@ export default function App() {
               </div>
 
               {/* LADO DIREITO: Vagas 11 a 20 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="parking-wing">
                 {rightSpots.map((vaga, i) => {
                   const isSelected = selectedSpot?.idVaga === vaga.idVaga;
                   return (
@@ -341,9 +309,9 @@ export default function App() {
                       onClick={() => handleSpotClick(vaga)}
                       className={`parking-bay ${vaga.isOcupada ? 'occupied' : 'free'} ${isSelected ? 'selected' : ''}`}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>{vaga.codigoVaga}</span>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>{vaga.tipoVaga}</span>
+                      <div className="parking-bay-info">
+                        <span className="parking-bay-code">{vaga.codigoVaga}</span>
+                        <span className="parking-bay-type">{vaga.tipoVaga}</span>
                       </div>
 
                       {vaga.isOcupada ? (
@@ -357,13 +325,13 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <div style={{ width: '100%', textAlign: 'center', padding: '6px 0' }}>
+                        <div className="parking-bay-action">
                           {isSelected ? (
-                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>
+                            <span className="badge-selected">
                               ✓ Selecionada
                             </span>
                           ) : (
-                            <span style={{ color: '#2563eb', fontSize: '0.8rem', fontWeight: 700 }}>
+                            <span className="badge-available">
                               + Disponível
                             </span>
                           )}

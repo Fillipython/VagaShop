@@ -31,20 +31,91 @@
   padding: 0;
 }
 
+html {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-app);
   color: var(--text-main);
-  min-height: 100vh;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Container Principal */
 .app-layout {
   max-width: 1480px;
+  width: 100%;
   margin: 0 auto;
   padding: 24px;
   min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge-simulator {
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #10b981;
+  white-space: nowrap;
+}
+
+.btn-refresh {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 /* Card Branco com Sombra Suave */
@@ -53,9 +124,28 @@ body {
   border: 1px solid var(--border-light);
   border-radius: 20px;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Pílulas de Setor / Andar */
+/* Floor Pills Container com Scroll Horizontal Suave */
+.floor-pills-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
 .floor-pill {
   padding: 8px 18px;
   border-radius: 9999px;
@@ -67,6 +157,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .floor-pill:hover {
@@ -81,6 +172,29 @@ body {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
+/* Status do Setor */
+.sector-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  padding: 12px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sector-counts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
 /* Pátio / Pista de Estacionamento */
 .parking-lot-canvas {
   background: #f8fafc;
@@ -88,6 +202,10 @@ body {
   border-radius: 24px;
   padding: 24px 20px;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .road-aisle {
@@ -133,7 +251,7 @@ body {
   border: 2px dashed #cbd5e1;
   border-radius: 14px;
   background: #ffffff;
-  min-height: 96px;
+  min-height: 86px;
   padding: 10px 14px;
   display: flex;
   align-items: center;
@@ -141,6 +259,11 @@ body {
   position: relative;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 8px;
 }
 
 .parking-bay:hover {
@@ -169,6 +292,58 @@ body {
   background: var(--primary-blue-light);
 }
 
+.parking-bay-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.parking-bay-code {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.parking-bay-type {
+  font-size: 0.65rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.parking-bay-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.parking-bay-action {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.badge-available {
+  color: var(--primary-blue);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-selected {
+  background: var(--primary-blue);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
 /* Placa no Padrão Brasileiro Compacta */
 .brazil-plate {
   display: inline-flex;
@@ -180,6 +355,7 @@ body {
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   user-select: none;
+  flex-shrink: 0;
 }
 
 .brazil-plate-header {
@@ -228,7 +404,11 @@ body {
 
 /* Top-View Car Silhouette */
 .car-top-view {
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12));
+  flex-shrink: 0;
+  display: block;
+  width: 68px;
+  height: 34px;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.15));
 }
 
 /* Grid Responsivo da Aplicação */
@@ -237,67 +417,164 @@ body {
   grid-template-columns: minmax(0, 1fr) 380px;
   gap: 24px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .parking-road-grid {
   display: grid;
-  grid-template-columns: 1fr 50px 1fr;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+  gap: 10px;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.parking-wing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 1080px) {
   .main-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@media (max-width: 640px) {
+/* NO MOBILE: Transforma em 1 única coluna contínua de 1 a 20 perfeitamente ajustada */
+@media (max-width: 768px) {
   .app-layout {
-    padding: 12px 8px;
-  }
-  .clean-card {
-    padding: 14px 10px !important;
-    border-radius: 16px;
-  }
-  .parking-lot-canvas {
-    padding: 14px 6px;
-    border-radius: 14px;
-  }
-  .parking-road-grid {
-    grid-template-columns: 1fr 28px 1fr;
-    gap: 6px;
-  }
-  .parking-bay {
-    min-height: 90px;
-    padding: 10px 8px;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 6px;
-  }
-  .parking-bay-content {
+    padding: 14px 10px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .app-header {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  .clean-card {
+    padding: 16px 12px !important;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .main-grid {
     display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    gap: 16px;
+  }
+
+  .sector-status-bar {
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+
+  .parking-lot-canvas {
+    padding: 12px 8px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .parking-road-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .road-aisle {
+    display: none; /* Oculta a faixa divisória no mobile para dar 100% de largura às vagas */
+  }
+
+  .parking-bay {
+    width: 100%;
+    max-width: 100%;
+    min-height: 72px;
+    padding: 10px 12px;
+    flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    border-radius: 12px;
+    box-sizing: border-box;
+    gap: 8px;
   }
+
+  .parking-bay-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 50px;
+    flex-shrink: 0;
+  }
+
+  .parking-bay-code {
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+
+  .parking-bay-type {
+    font-size: 0.65rem;
+    padding: 1px 5px;
+  }
+
+  .parking-bay-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .car-top-view {
-    width: 64px;
-    height: 32px;
+    width: 58px;
+    height: 29px;
+    flex-shrink: 0;
+    display: block;
   }
+
   .brazil-plate {
     border-radius: 3px;
+    flex-shrink: 0;
   }
+
   .brazil-plate-header {
-    font-size: 0.5rem;
+    font-size: 0.42rem;
     padding: 1px 3px;
   }
+
   .brazil-plate-code {
     font-size: 0.75rem;
     letter-spacing: 0.5px;
     padding: 2px 4px;
     font-weight: 800;
+  }
+
+  .badge-available {
+    font-size: 0.75rem;
+  }
+
+  .badge-selected {
+    font-size: 0.7rem;
+    padding: 3px 8px;
   }
 }
 

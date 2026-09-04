@@ -50,20 +50,21 @@ public class SimuladorFluxoService {
     }
 
     /**
-     * Inicializa os 5 setores e 100 vagas e popula alguns carros ao subir o Spring Boot.
+     * Inicializa os 5 setores e 100 vagas e popula alguns carros ao subir o Spring
+     * Boot.
      */
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void inicializarEstruturaEPopulacao() {
         if (setorRepository.count() == 0) {
             log.info("Inicializando os 5 setores (3 cobertos, 2 descobertos) e 100 vagas...");
-            
+
             Object[][] setoresConfig = {
-                {"Setor G1 (Coberto)", true, "G1"},
-                {"Setor G2 (Coberto)", true, "G2"},
-                {"Setor G3 (Descoberto)", false, "G3"},
-                {"Setor G4 (Coberto)", true, "G4"},
-                {"Setor Subsolo (Descoberto)", false, "SUB"}
+                    { "Setor G1 (Coberto)", true, "G1" },
+                    { "Setor G2 (Coberto)", true, "G2" },
+                    { "Setor G3 (Descoberto)", false, "G3" },
+                    { "Setor G4 (Coberto)", true, "G4" },
+                    { "Setor Subsolo (Descoberto)", false, "SUB" }
             };
 
             for (Object[] config : setoresConfig) {
@@ -72,10 +73,10 @@ public class SimuladorFluxoService {
 
                 List<Vaga> vagas = new ArrayList<>();
                 for (int i = 1; i <= 20; i++) {
-                    String tipo = (i <= 14) ? TipoVaga.NORMAL.getDescricao() :
-                                  (i <= 16) ? TipoVaga.PCD.getDescricao() :
-                                  (i <= 18) ? TipoVaga.IDOSO.getDescricao() : TipoVaga.MOTO.getDescricao();
-                    
+                    String tipo = (i <= 14) ? TipoVaga.NORMAL.getDescricao()
+                            : (i <= 16) ? TipoVaga.PCD.getDescricao()
+                                    : (i <= 18) ? TipoVaga.IDOSO.getDescricao() : TipoVaga.MOTO.getDescricao();
+
                     String codigo = String.format("%s-%02d", config[2], i);
                     vagas.add(new Vaga(null, salvo, codigo, tipo));
                 }
@@ -93,7 +94,7 @@ public class SimuladorFluxoService {
             for (int i = 0; i < quantidadeInicial; i++) {
                 Vaga vaga = vagasLivres.get(i);
                 String placa = gerarPlacaAleatoria();
-                
+
                 Veiculo veiculo = veiculoRepository.findByPlaca(placa)
                         .orElseGet(() -> veiculoRepository.save(new Veiculo(placa)));
 
@@ -119,7 +120,8 @@ public class SimuladorFluxoService {
                 if (!estacionados.isEmpty()) {
                     RegistroEstacionamento escolhido = estacionados.get(random.nextInt(estacionados.size()));
                     estacionamentoService.registrarSaida(new SaidaVeiculoDTO(escolhido.getVeiculo().getPlaca()));
-                    log.info("🚗 SAÍDA: Veículo [{}] saiu da vaga [{}]", escolhido.getVeiculo().getPlaca(), escolhido.getVaga().getCodigoVaga());
+                    log.info("SAÍDA: Veículo [{}] saiu da vaga [{}]", escolhido.getVeiculo().getPlaca(),
+                            escolhido.getVaga().getCodigoVaga());
                 }
             }
 
@@ -130,7 +132,7 @@ public class SimuladorFluxoService {
                     Vaga vagaEscolhida = vagasLivres.get(random.nextInt(vagasLivres.size()));
                     String placa = gerarPlacaAleatoria();
                     estacionamentoService.registrarEntrada(new EntradaVeiculoDTO(placa, vagaEscolhida.getIdVaga()));
-                    log.info("🟢 ENTRADA: Veículo [{}] estacionou na vaga [{}]", placa, vagaEscolhida.getCodigoVaga());
+                    log.info("ENTRADA: Veículo [{}] estacionou na vaga [{}]", placa, vagaEscolhida.getCodigoVaga());
                 }
             }
         } catch (Exception e) {
@@ -143,8 +145,9 @@ public class SimuladorFluxoService {
         String numeros = "0123456789";
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 3; i++) sb.append(letras.charAt(random.nextInt(letras.length())));
-        
+        for (int i = 0; i < 3; i++)
+            sb.append(letras.charAt(random.nextInt(letras.length())));
+
         if (random.nextBoolean()) {
             // Mercosul: AAA1A23
             sb.append(numeros.charAt(random.nextInt(numeros.length())));
@@ -154,7 +157,8 @@ public class SimuladorFluxoService {
         } else {
             // Tradicional: AAA-1234
             sb.append("-");
-            for (int i = 0; i < 4; i++) sb.append(numeros.charAt(random.nextInt(numeros.length())));
+            for (int i = 0; i < 4; i++)
+                sb.append(numeros.charAt(random.nextInt(numeros.length())));
         }
         return sb.toString();
     }
