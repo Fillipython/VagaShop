@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚗 VagaShop - Sistema Inteligente de Gestão de Estacionamento
+# VagaShop - Sistema Inteligente de Gestão de Estacionamento
 
 Um sistema moderno e completo de monitoramento e controle de fluxo de estacionamento em tempo real, construído com **Java Spring Boot 3**, **React**, **PostgreSQL** e orquestrado com **Docker**.
 
@@ -14,19 +14,19 @@ Um sistema moderno e completo de monitoramento e controle de fluxo de estacionam
 
 ---
 
-## 📸 Demonstração Visual
+## Demonstração Visual
 
 <div align="center">
-  <h3>🗺️ Mapa Visual dos Setores em Tempo Real</h3>
-  <img src="assets/mapa-setores.png" alt="Mapa dos Setores" width="850"/>
+  <h3>Versão Desktop</h3>
+  <img src="vagas-ocupadas.png" alt="Dashboard Desktop" width="850"/>
   <br/><br/>
-  <h3>🚘 Monitoramento de Veículos e Placas</h3>
-  <img src="assets/carros-estacionados.png" alt="Carros Estacionados" width="850"/>
+  <h3>Versão Mobile (Responsivo)</h3>
+  <img src="vagas-ocupadas-mobile.png" alt="Dashboard Mobile" width="380"/>
 </div>
 
 ---
 
-## 🎯 Sobre o Projeto
+## Sobre o Projeto
 
 O **VagaShop** é uma plataforma desenvolvida para controlar a ocupação de vagas de um estacionamento com 5 setores (3 cobertos e 2 descobertos) totalizando 100 vagas divididas por categorias (*Normal, PCD, Idoso e Moto*).
 
@@ -34,36 +34,37 @@ O backend inclui um **simulador autônomo de fluxo** que registra entradas e sa�
 
 ---
 
-## ⚡ Principais Funcionalidades
+## Principais Funcionalidades
 
 - **Dashboard em Tempo Real**: Métricas atualizadas automaticamente (Total de Vagas, Vagas Ocupadas, Vagas Livres e Taxa de Lotação).
-- **Mapa Interativo de Vagas**: Visualização setorizada das 100 vagas com identificação imediata de status (*Livre* vs *Ocupada* com placa do veículo).
+- **Mapa Interativo de Vagas**: Visualização setorizada das 100 vagas com identificação imediata de status (*Livre* vs *Ocupada* com veículo top-view e placa Mercosul/tradicional).
+- **Interface Responsiva**: Experiência fluida tanto em computadores quanto em dispositivos móveis, com layout ajustável em coluna única no mobile.
 - **Regras de Negócio e Tarifação**: Cálculo automático do valor de permanência (R$ 5,00/hora cheia) na saída do veículo.
 - **Validação de Placas**: Validação com *Bean Validation* nos formatos padrão Mercosul (`AAA1A23`) e Tradicional (`AAA-1234`).
 - **Simulação Contínua**: Motor agendado (`@Scheduled`) no Spring Boot que gera movimentação contínua de pátio para demonstração e análise de dados.
 
 ---
 
-## 🏛️ Arquitetura e Tecnologias
+## Arquitetura e Tecnologias
 
-### 🖥️ Backend (Java Spring Boot)
+### Backend (Java Spring Boot)
 - **Spring Data JPA & Hibernate**: Modelagem relacional e queries otimizadas com paginação.
 - **Camada MVC / REST**: Separação clara entre *Controllers*, *Services*, *Repositories*, *DTOs* e *Mappers*.
 - **Bean Validation**: Validação estrita de entradas com tratamento global de erros (`@RestControllerAdvice`).
 - **Enums e Constantes**: Tipagem forte para eventos e categorias de vagas.
 
-### 🌐 Frontend (React + Vite)
+### Frontend (React + Vite)
 - **React 18**: Componentização limpa com React Hooks e consumo da API REST.
-- **Vanilla CSS Moderno**: Tema Dark premium, Glassmorphism otimizado e responsivo.
+- **Vanilla CSS Moderno**: Layout arquitetural limpo, responsivo com suporte completo a dispositivos móveis.
 - **Lucide Icons**: Ícones modernos e intuitivos.
 
-### 🗄️ Banco de Dados & Infraestrutura
+### Banco de Dados & Infraestrutura
 - **PostgreSQL 16**: Banco de dados relacional com integridade referencial.
 - **Docker & Docker Compose**: Subida de todo o ecossistema com um único comando.
 
 ---
 
-## 🚀 Como Executar o Projeto
+## Como Executar o Projeto
 
 ### Pré-requisitos
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução.
@@ -82,7 +83,7 @@ docker compose up -d --build
 
 ---
 
-## 🌐 Endereços de Acesso
+## Endereços de Acesso
 
 | Serviço | URL | Descrição |
 | :--- | :--- | :--- |
@@ -92,7 +93,7 @@ docker compose up -d --build
 
 ---
 
-## 📁 Estrutura do Repositório
+## Estrutura do Repositório
 
 ```
 VagaShop/
@@ -111,11 +112,13 @@ VagaShop/
 │   └── Dockerfile            # Container Node.js
 ├── schema.sql                # Script de inicialização do PostgreSQL
 ├── docker-compose.yml        # Orquestração dos containers
+├── vagas-ocupadas.png        # Print da visualização Desktop
+├── vagas-ocupadas-mobile.png # Print da visualização Mobile
 └── README.md                 # Documentação do projeto
 ```
 
 ---
 
-## 👨‍💻 Autor
+## Autor
 
 Desenvolvido por **[Fillipython](https://github.com/Fillipython)**.
